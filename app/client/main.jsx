@@ -4,13 +4,28 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Splash } from '/imports/ui/pages/Splash';
 import { PlayRoute } from '/imports/ui/pages/PlayRoute';
 import { JoinRoom } from '/imports/ui/pages/JoinRoom';
+import { GameModeSelector } from '/imports/ui/pages/GameModeSelector';
+import { CustomGameSettings } from '/imports/ui/pages/CustomGameSettings';
 import { PlayerLobby } from '/imports/ui/pages/PlayerLobby';
 import { EndLeaderboard } from '/imports/ui/EndLeaderboard';
 import { GamePage } from '/imports/ui/pages/GamePage';
 import { Account } from '/imports/ui/pages/Account';
+import { GlobalLeaderboard } from '/imports/ui/pages/GlobalLeaderboard';
+import { resumeSession } from '/imports/ui/accountSession';
+import { resumeBrowserSession } from '/imports/ui/browserSession';
 import '/imports/ui/styles.css';
 
 Meteor.startup(() => {
+  // First, and with wait: true, so room and game methods run on a bound browser session.
+  resumeBrowserSession();
+  if (Meteor.connection) {
+    const previous = Meteor.connection.onReconnect;
+    Meteor.connection.onReconnect = () => {
+      if (typeof previous === 'function') previous();
+      resumeBrowserSession();
+    };
+  }
+  resumeSession();
   const container = document.getElementById('react-target');
   const root = createRoot(container);
   root.render(
@@ -20,9 +35,11 @@ Meteor.startup(() => {
         <Route path="/game" element={<GamePage />} />
         <Route path="/play" element={<PlayRoute />} />
         <Route path="/play/join" element={<JoinRoom />} />
+        <Route path="/play/modes/:pin" element={<GameModeSelector />} />
+        <Route path="/play/custom/:pin" element={<CustomGameSettings />} />
         <Route path="/play/:pin" element={<PlayerLobby />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
         <Route path="/account" element={<Account />} />
+        <Route path="/leaderboard" element={<GlobalLeaderboard />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
